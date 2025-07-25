@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react'
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
-import { isNumber, isOperator, higherOrSamePrecedence } from '../logic';
+import { isNumber, isOperator, higherOrSamePrecedence, isFunction } from '../logic';
 
 const Arithmetic = () => {
     const [rawInput, setRawInput] = useState("")
@@ -73,7 +73,7 @@ const Arithmetic = () => {
                 continue;
             } else {
                 if (i > 0 && input[i] == '(' && 
-                    isNumber(input[i - 1]) || input[i - 1] == ')'
+                    (isNumber(input[i - 1]) || input[i - 1] == ')')
                 ) {
                     tokens.push('*');
                 }
@@ -101,8 +101,14 @@ const Arithmetic = () => {
 
         for (let i = 0; i < tokens.length; i++) {
             let token = tokens[i]
-            if (isNumber(token)) {
+            if (isNumber(token)) { //number
                 output.push(parseFloat(token));
+            } else if (token.charCodeAt(i) >= 97 && token.charCodeAt(i) <= 122) {//function?
+                if (isFunction(token)) {
+                    operators.push(token);
+                } else {
+                    throw Error("NOT A RECOGNIZED FUNCTION!")
+                }
             } else if (isOperator(token)) {
                 while (operators[operators.length - 1] != '(' && higherOrSamePrecedence(token, operators[operators.length - 1])) {
                     output.push(operators.pop());
@@ -130,7 +136,10 @@ const Arithmetic = () => {
                 //top of stack should have left parenthesis now
                 operators.pop()
 
-                //optional function call
+                //pop function
+                if (isFunction(operators[operators.length - 1])) {
+                    output.push(operators.pop());
+                }
             }
         }
 
