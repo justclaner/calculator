@@ -3,7 +3,7 @@ import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import { isNumber, isOperator, higherOrSamePrecedence, isFunction, isConstant } from '../logic';
 
-const Arithmetic = () => {
+const Evaluator = () => {
     const [rawInput, setRawInput] = useState("")
     const [latex, setLatex] = useState("")
     const regex = /[a-zA-Z0-9()^*\/\-+!π]/g
@@ -229,7 +229,7 @@ const Arithmetic = () => {
 
   return (
     <div className='flex flex-col items-center w-full'>
-        <div className="text-5xl text-center mt-2">Arithmetic Calculator</div>
+        <div className="text-5xl text-center mt-2">Expression Evaluator</div>
         <input type="text" 
         tabIndex={0}
             ref={inputRef}
@@ -241,4 +241,4 @@ const Arithmetic = () => {
   )
 }
 
-export default Arithmetic
+export default Evaluator

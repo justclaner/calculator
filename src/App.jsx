@@ -1,11 +1,11 @@
 import React from 'react'
 import {Routes, Route} from 'react-router-dom';
-import Arithmetic from "./components/Arithmetic.jsx"
+import Evaluator from "./components/Evaluator.jsx"
 
 const App = () => {
   return (
     <Routes>
-      <Route path='/arithmetic' element={<Arithmetic />} />
+      <Route path='/evaluator' element={<Evaluator />} />
     </Routes>
   )
 }
