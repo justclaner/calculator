@@ -1,14 +1,12 @@
 import React from 'react'
-import 'katex/dist/katex.min.css';
-import { InlineMath, BlockMath } from 'react-katex';
+import {Routes, Route} from 'react-router-dom';
+import Arithmetic from "./components/Arithmetic.jsx"
 
 const App = () => {
   return (
-    <div>
-      <div className="text-3xl">
-        <InlineMath math="\frac{2}{3}x^2"/>
-      </div>
-    </div>
+    <Routes>
+      <Route path='/arithmetic' element={<Arithmetic />} />
+    </Routes>
   )
 }
 
