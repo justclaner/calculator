@@ -11,7 +11,11 @@ const Arithmetic = () => {
 
     const handleInput = (e) => {
         console.log(e.target.value);
-        const str = e.target.value.match(regex).join('');
+        const str = e.target.value.match(regex)?.join('');
+        if (str == null) {
+            setRawInput("");
+            return;
+        }
         //check for pi
         let filteredStr = "";
 
@@ -69,6 +73,9 @@ const Arithmetic = () => {
     }
 
     const convertToRDN = (input) => {
+        if (input == "") {
+            return []
+        }
         //filter out spaces
         input = [...input].filter(c => c != ' ').join("").toLowerCase();
         console.log("raw input", input)
