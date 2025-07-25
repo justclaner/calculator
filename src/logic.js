@@ -39,12 +39,17 @@ const functions = new Set([
     "arcsin", "arccos", "arccsc", "arcsec", "arccot",
     "sinh", "cosh", "tanh", "csch", "sech", "coth",
     "arcsinh", "arccosh", "arctanh", "arccsch", "arcsech", "arccoth",
-    "ln", "log"
+    "ln", "log", "sqrt", "cbrt"
 ]);
 
 export const isFunction = (str) => {
-    if (isNumber(str) || isOperator(str)) {
-        return false;
-    }
     return functions.has(str);
+}
+
+const constants = new Set([
+    "π", "e"
+])
+
+export const isConstant = (char) => {
+    return constants.has(char);
 }

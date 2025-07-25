@@ -1,16 +1,42 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useRef} from 'react'
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
-import { isNumber, isOperator, higherOrSamePrecedence, isFunction } from '../logic';
+import { isNumber, isOperator, higherOrSamePrecedence, isFunction, isConstant } from '../logic';
 
 const Arithmetic = () => {
     const [rawInput, setRawInput] = useState("")
     const [latex, setLatex] = useState("")
-    const regex = /[a-zA-Z0-9()^*\/\-+!]/g
-    const legalCharacters = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/', '^', '(', ')', '!', ' '])
+    const regex = /[a-zA-Z0-9()^*\/\-+!π]/g
+    const inputRef = useRef(null)
 
     const handleInput = (e) => {
-        setRawInput(e.target.value.match(regex).join(''));
+        console.log(e.target.value);
+        const str = e.target.value.match(regex).join('');
+        //check for pi
+        let filteredStr = "";
+
+        const cursorPos = e.target.selectionStart;
+        let piFoundBeforeCursor = 0;
+        
+        for (let i = 0; i < str.length; i++) {
+            if (i < str.length - 1 && str[i] == 'p' && str[i + 1] == 'i') {
+                filteredStr += "π"
+                if (i + 1 < cursorPos) {
+                    piFoundBeforeCursor += 1;
+                }
+                i++;
+            } else {
+                filteredStr += str[i];
+            }
+        }
+        setRawInput(filteredStr);
+
+        setTimeout(() => {
+            if (inputRef.current) {
+                const newPos = cursorPos - piFoundBeforeCursor;
+                inputRef.current.setSelectionRange(newPos, newPos);
+            }
+        }, 0);
     }
 
     const parseToLatex = (input) => {
@@ -45,15 +71,24 @@ const Arithmetic = () => {
     const convertToRDN = (input) => {
         //filter out spaces
         input = [...input].filter(c => c != ' ').join("").toLowerCase();
-
+        console.log("raw input", input)
         //tokenize first, numbers will be strings too
         let tokens = []
         let j = 0;
         let i = 0;
-        let tokenType = 0;
         while (i < input.length) {
             let code = input.charCodeAt(i);
-            if (code >= 97 && code <= 122) {
+            if (isConstant(input[i])) {
+                if (i > 0 && 
+                    (input[i - 1] == ')' || isNumber(input[i - 1]) || isConstant(input[i - 1]))
+                ) {
+                    tokens.push('*');
+                }
+                console.log("PUSHING CONSTANT", input[i]);
+                tokens.push(input[i]);
+                j++;
+                i++;
+            } else if (code >= 97 && code <= 122) {
                 //coefficient multiplication operation must be pushed
                 if (i > 0 && isNumber(input[i - 1])) {
                     tokens.push('*');
@@ -65,6 +100,10 @@ const Arithmetic = () => {
                 j = i;
                 continue;
             } else if (isNumber(input[i])) {
+                //check right parenthesis
+                if (i > 0 && (input[i - 1] == ')' || isConstant(input[i - 1]))) {
+                    tokens.push('*');
+                }
                 while (i < input.length && isNumber(input[i])) {
                     i++;
                 }
@@ -101,7 +140,18 @@ const Arithmetic = () => {
 
         for (let i = 0; i < tokens.length; i++) {
             let token = tokens[i]
-            if (isNumber(token)) { //number
+            if (isConstant(token)) {
+                switch (token) {
+                    case 'π':
+                        output.push(Math.PI);
+                        break;
+                    case 'e':
+                        output.push(Math.E);
+                        break;
+                    default:
+                        break;
+                }
+            } else if (isNumber(token)) { //number
                 output.push(parseFloat(token));
             } else if (token.charCodeAt(i) >= 97 && token.charCodeAt(i) <= 122) {//function?
                 if (isFunction(token)) {
@@ -175,6 +225,7 @@ const Arithmetic = () => {
         <div className="text-5xl text-center mt-2">Arithmetic Calculator</div>
         <input type="text" 
         tabIndex={0}
+            ref={inputRef}
             className="w-[80%] h-[60px] text-3xl border-2 border-black px-2 py-1" 
             value={rawInput} 
             placeholder='Type Here...'
