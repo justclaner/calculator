@@ -6,10 +6,11 @@ import { isNumber, isOperator, higherOrSamePrecedence } from '../logic';
 const Arithmetic = () => {
     const [rawInput, setRawInput] = useState("")
     const [latex, setLatex] = useState("")
+    const regex = /[a-zA-Z0-9()^*\/\-+!]/g
     const legalCharacters = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/', '^', '(', ')', '!', ' '])
 
     const handleInput = (e) => {
-        setRawInput([...e.target.value].filter(c => legalCharacters.has(c)).join(''));
+        setRawInput(e.target.value.match(regex).join(''));
     }
 
     const parseToLatex = (input) => {
@@ -43,22 +44,48 @@ const Arithmetic = () => {
 
     const convertToRDN = (input) => {
         //filter out spaces
-        input = [...input].filter(c => c != ' ').join("")
+        input = [...input].filter(c => c != ' ').join("").toLowerCase();
+
         //tokenize first, numbers will be strings too
         let tokens = []
         let j = 0;
         let i = 0;
+        let tokenType = 0;
         while (i < input.length) {
-            if (isNumber(input[i])) {
-                i++;
-            }
-
-            //numbers
-            if (j != i) {
+            let code = input.charCodeAt(i);
+            if (code >= 97 && code <= 122) {
+                //coefficient multiplication operation must be pushed
+                if (i > 0 && isNumber(input[i - 1])) {
+                    tokens.push('*');
+                }
+                while (i < input.length && input.charCodeAt(i) >= 97 && input.charCodeAt(i) <= 122) {
+                    i++;
+                }
+                tokens.push(input.slice(j, i));
+                j = i;
+                continue;
+            } else if (isNumber(input[i])) {
+                while (i < input.length && isNumber(input[i])) {
+                    i++;
+                }
                 tokens.push(input.slice(j, i));
                 j = i
+                continue;
             } else {
+                if (i > 0 && input[i] == '(' && 
+                    isNumber(input[i - 1]) || input[i - 1] == ')'
+                ) {
+                    tokens.push('*');
+                }
+
                 tokens.push(input[i]);
+
+                if (i < input.length - 1 && input[i] == ')' && (
+                    isNumber(input[i + 1]) || 
+                    (input.charCodeAt(i + 1) >= 97 && input.charCodeAt(i + 1) <= 122)
+                )) {
+                    tokens.push('*');
+                }
                 j++;
                 i++;
             }
@@ -66,6 +93,7 @@ const Arithmetic = () => {
         if (i != j) {
             tokens.push(input.slice(j));
         }
+        console.log("TOKENS", tokens)
 
         //shunting-yard algorithm
         let output = []

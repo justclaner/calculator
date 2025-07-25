@@ -33,3 +33,18 @@ const precedences = new Map([
 export const higherOrSamePrecedence = (o1, o2) => {
     return precedences.get(o2) >= precedences.get(o1);
 }
+
+const functions = new Set([
+    "sin", "cos", "tan", "csc", "sec", "cot",
+    "arcsin", "arccos", "arccsc", "arcsec", "arccot",
+    "sinh", "cosh", "tanh", "csch", "sech", "coth",
+    "arcsinh", "arccosh", "arctanh", "arccsch", "arcsech", "arccoth",
+    "ln", "log"
+]);
+
+export const isFunction = (str) => {
+    if (isNumber(str) || isOperator(str)) {
+        return false;
+    }
+    return functions.has(str);
+}
