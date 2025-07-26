@@ -7,7 +7,7 @@ const Evaluator = () => {
     const [rawInput, setRawInput] = useState("")
     const [latex, setLatex] = useState("")
     const [result, setResult] = useState(null);
-    const regex = /[a-zA-Z0-9()^*\/\-+!π.,]/g
+    const regex = /[a-zA-Z0-9()^*\/\-+!π., ]/g
     const inputRef = useRef(null)
 
     const handleInput = (e) => {
