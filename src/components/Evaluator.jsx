@@ -57,18 +57,19 @@ const Evaluator = () => {
             setLatex(postfixToLatex(tokenList));
         } catch(e) {
             console.log(e)
-            setResult(null);
+            setResult(NaN);
             setLatex("");
         }
     }, [rawInput])
 
     useEffect(() => {
+        console.log(result)
         console.log(isNaN(result))
     }, [result])
 
   return (
-    <div className='flex flex-col gap-2 items-center w-full'>
-        <div className="text-5xl text-center mt-2">Expression Evaluator</div>
+    <div className='flex flex-col gap-3 items-center w-full'>
+        <div className="text-5xl text-center my-2">Expression Evaluator</div>
         <input type="text" 
         tabIndex={0}
             ref={inputRef}
@@ -76,10 +77,11 @@ const Evaluator = () => {
             value={rawInput} 
             placeholder='Type Here...'
             onChange={handleInput} />
-        {latex && <div className="text-3xl">
+        <div className="text-3xl min-h-[48px] w-fit border-2 border-black px-2 py-1"
+        style={{borderWidth: latex ? `2px` : `0px`}}>
             <InlineMath math={latex}/>
-        </div>}
-        <div className="text-3xl">{isNaN(result) ? `Undefined` : result}</div>
+        </div>
+        <div className="text-3xl">{isNaN(result) ? `undefined` : result}</div>
     </div>
   )
 }
