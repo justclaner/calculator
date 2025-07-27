@@ -230,6 +230,7 @@ export const convertToRPN = (input) => {
 
 
 export const evaluateRPN = (tokens) => {
+    console.log("TOKENS", tokens)
     let output = []
     for (let i = 0; i < tokens.length; i++) {
         let token = tokens[i];
@@ -243,7 +244,7 @@ export const evaluateRPN = (tokens) => {
             }
             let b = output.pop();
             switch (token) {
-                case '^': //exponent
+                case '^': //exponents
                     output.push(Math.pow(output.pop(), b));
                     break;
                 case '!': //factorial
@@ -388,6 +389,7 @@ export const evaluateRPN = (tokens) => {
         } else {
             throw new Error("Unrecognized token!");
         }
+        console.log(i, output)
     }
 
     if (output.length != 1) {
@@ -397,12 +399,23 @@ export const evaluateRPN = (tokens) => {
 }
 
 export const parenRequired = (token, operator) => {
+    console.log(token, operator)
     if (typeof token == "number" || isConstant(token)) {
         return false;
     } else if (typeof token == "string") {
-        if (token.length > 2 && token[0] == '(' && token[token.length - 1] == ')') {
-            return true;
+        //special case of exponent on function
+        if (operator == '^' && token.slice(0, 5) == '\\text'
+        ) {
+            return false;
         }
+
+        //other stuff
+        if (token.length > 2 
+            && (token[0] == '(' || token.slice(0, 7) == '\\lfloor' || token.slice(0, 6) == '\\lceil')
+        ) {
+            return false;
+        }
+        
         if (operator == '!' || operator == '^') {
             return true;
         } else if (operator == '*') {
@@ -419,7 +432,7 @@ export const parenRequired = (token, operator) => {
             }
         } else {
             //division, addition or subtraction never needs extra parenthesis
-            return true;
+            return false;
         }
     }
     return false;
@@ -457,10 +470,32 @@ export const postfixToLatex = (tokens) => {
                         let base = tokens[i - 2];
                         let exponent = tokens[i - 1];
 
+                        //special case where base is a function
+                        special: if (base.length >= 4 && base.slice(0, 5) == '\\text' && Number.isInteger(exponent)) {
+                            //check if it is an inverse trig function
+                            for (let i = 0; i < base.length - 4; i++) {
+                                if (base.slice(i, i + 5) == '^{-1}') {
+                                    break special;
+                                }
+                            }
+
+                            let j = 0;
+                            while (j < base.length) {
+                                if (base[j] == '}') {
+                                    break;
+                                }
+                                j++;
+                            }
+                            newExpression = `${base.slice(0, j + 1)}^{${exponent}}${base.slice(j + 1)}`;
+                            break;
+                        }
+
                         if (parenRequired(base, "^")) {
                             base = "\\left(" + base + "\\right)";
                         }
                         newExpression = `${base}^{${exponent}}`;
+
+
                         //tokens.splice(i - 2, 3, `${base}^{${exponent}}`);
                         break;
                     case '*':

@@ -62,6 +62,10 @@ const Evaluator = () => {
         }
     }, [rawInput])
 
+    useEffect(() => {
+        console.log(isNaN(result))
+    }, [result])
+
   return (
     <div className='flex flex-col gap-2 items-center w-full'>
         <div className="text-5xl text-center mt-2">Expression Evaluator</div>
@@ -75,7 +79,7 @@ const Evaluator = () => {
         {latex && <div className="text-3xl">
             <InlineMath math={latex}/>
         </div>}
-        <div className="text-3xl">{result}</div>
+        <div className="text-3xl">{isNaN(result) ? `Undefined` : result}</div>
     </div>
   )
 }
