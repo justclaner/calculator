@@ -77,7 +77,6 @@ export const convertToRPN = (input) => {
     }
     //filter out spaces
     input = [...input].filter(c => c != ' ').join("").toLowerCase();
-    console.log("raw input", input)
     //tokenize first, numbers will be strings too
     let tokens = []
     let j = 0;
@@ -85,18 +84,15 @@ export const convertToRPN = (input) => {
     while (i < input.length) {
         let code = input.charCodeAt(i);
         if (isConstant(input[i])) {
-            console.log("CONSTANT")
             if (i > 0 && 
                 (input[i - 1] == ')' || isNumber(input[i - 1]) || isConstant(input[i - 1]))
             ) {
                 tokens.push('*');
             }
-            console.log("PUSHING CONSTANT", input[i]);
             tokens.push(input[i]);
             j++;
             i++;
         } else if (code >= 97 && code <= 122) {
-            console.log("FUNCTION")
             //coefficient multiplication operation must be pushed
             if (i > 0 && isNumber(input[i - 1])) {
                 tokens.push('*');
@@ -108,7 +104,6 @@ export const convertToRPN = (input) => {
             j = i;
             continue;
         } else if (isNumber(input[i])) {
-            console.log("NUMBER")
             //check right parenthesis
             if (i > 0 && (input[i - 1] == ')' || isConstant(input[i - 1]))) {
                 tokens.push('*');
@@ -120,7 +115,6 @@ export const convertToRPN = (input) => {
             j = i
             continue;
         } else {
-            console.log("OPERATOR")
             //negative sign either at the start of parenthesis, after operator/function, or at start of entire expression
             if (
                 (  
@@ -160,7 +154,6 @@ export const convertToRPN = (input) => {
     if (i != j) {
         tokens.push(input.slice(j));
     }
-    console.log("TOKENS", tokens)
 
     //shunting-yard algorithm
     let output = []
@@ -181,7 +174,7 @@ export const convertToRPN = (input) => {
             }
         } else if (isNumber(token)) { //number
             output.push(parseFloat(token));
-        } else if (token.charCodeAt(i) >= 97 && token.charCodeAt(i) <= 122) {//function?
+        } else if (isFunction(token)) {//function?
             if (isFunction(token)) {
                 operators.push(token);
             } else {
@@ -218,6 +211,8 @@ export const convertToRPN = (input) => {
             if (isFunction(operators[operators.length - 1])) {
                 output.push(operators.pop());
             }
+        } else {
+            throw new Error("Nothing matched token!");
         }
     }
 
@@ -230,8 +225,6 @@ export const convertToRPN = (input) => {
         output.push(operator);
     }
 
-
-    console.log(output);
     return output;
 }
 
@@ -240,7 +233,6 @@ export const evaluateRPN = (tokens) => {
     let output = []
     for (let i = 0; i < tokens.length; i++) {
         let token = tokens[i];
-        console.log(typeof token);
         if (typeof token == "number") {
             output.push(token);
         } else if (isOperator(token)) {
@@ -401,12 +393,10 @@ export const evaluateRPN = (tokens) => {
     if (output.length != 1) {
         throw new Error("Something wen't wrong while evaluating the RPN")
     }
-    console.log(output[0])
     return output[0];
 }
 
 export const parenRequired = (token, operator) => {
-    console.log("is paren required for", token, operator);
     if (typeof token == "number" || isConstant(token)) {
         return false;
     } else if (typeof token == "string") {
@@ -474,7 +464,6 @@ export const postfixToLatex = (tokens) => {
                         //tokens.splice(i - 2, 3, `${base}^{${exponent}}`);
                         break;
                     case '*':
-                        console.log("MULTIPLICATION");
                         let factor1 = tokens[i - 2];
                         let factor2 = tokens[i - 1];
                         let cdotRequired = true;
