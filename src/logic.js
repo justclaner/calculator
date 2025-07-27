@@ -1,5 +1,8 @@
 export const isNumber = (str) => {
     for (let i = 0; i < str.length; i++) {
+        if (i == 0 && str[0] == '-' && str.length > 1) {
+            continue;
+        }
         let code = str.charCodeAt(i);
         if (code != 46 && (code < 48 || code > 57)) {
             return false;
@@ -81,6 +84,7 @@ export const convertToRPN = (input) => {
     while (i < input.length) {
         let code = input.charCodeAt(i);
         if (isConstant(input[i])) {
+            console.log("CONSTANT")
             if (i > 0 && 
                 (input[i - 1] == ')' || isNumber(input[i - 1]) || isConstant(input[i - 1]))
             ) {
@@ -91,6 +95,7 @@ export const convertToRPN = (input) => {
             j++;
             i++;
         } else if (code >= 97 && code <= 122) {
+            console.log("FUNCTION")
             //coefficient multiplication operation must be pushed
             if (i > 0 && isNumber(input[i - 1])) {
                 tokens.push('*');
@@ -102,6 +107,7 @@ export const convertToRPN = (input) => {
             j = i;
             continue;
         } else if (isNumber(input[i])) {
+            console.log("NUMBER")
             //check right parenthesis
             if (i > 0 && (input[i - 1] == ')' || isConstant(input[i - 1]))) {
                 tokens.push('*');
@@ -113,7 +119,25 @@ export const convertToRPN = (input) => {
             j = i
             continue;
         } else {
-            if (i > 0 && input[i] == '(' && 
+            console.log("OPERATOR")
+            //negative sign either at the start of parenthesis, after operator/function, or at start of entire expression
+            if (
+                (  
+                    (i > 0 && (input[i - 1] == '(' || isOperator(input[i - 1]) || (input.charCodeAt(i - 1) >= 97 && input.charCodeAt(i - 1) <= 122))
+                ) || i == 0 //(start of expression)
+                ) &&
+                i < input.length - 1 && input[i] == '-' && (isNumber(input[i + 1]) || isConstant(input[i + 1]))
+            ) {
+                i++;
+                while (i < input.length && isNumber(input[i])) {
+                    i++;
+                }
+                tokens.push(input.slice(j, i));
+                j = i;
+                continue;
+            }
+            //left parenthesis preceded by right parenthesis
+            else if (i > 0 && input[i] == '(' && 
                 (isNumber(input[i - 1]) || input[i - 1] == ')')
             ) {
                 tokens.push('*');
@@ -121,8 +145,9 @@ export const convertToRPN = (input) => {
 
             tokens.push(input[i]);
 
+            //right parenthesis followed by number/constant/function
             if (i < input.length - 1 && input[i] == ')' && (
-                isNumber(input[i + 1]) || 
+                isNumber(input[i + 1]) || isConstant(input[i + 1]) || 
                 (input.charCodeAt(i + 1) >= 97 && input.charCodeAt(i + 1) <= 122)
             )) {
                 tokens.push('*');

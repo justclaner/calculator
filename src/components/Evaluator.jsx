@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react'
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
-import { isNumber, isOperator, higherOrSamePrecedence, isFunction, isConstant, convertToRPN, evaluateRPN } from '../logic';
+import { convertToRPN, evaluateRPN } from '../logic';
 
 const Evaluator = () => {
     const [rawInput, setRawInput] = useState("")
