@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react'
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
-import { convertToRPN, evaluateRPN } from '../logic';
+import { convertToRPN, evaluateRPN, postfixToLatex } from '../logic';
 
 const Evaluator = () => {
     const [rawInput, setRawInput] = useState("")
@@ -44,47 +44,21 @@ const Evaluator = () => {
         }, 0);
     }
 
-    const parseToLatex = (input) => {
-        //detect parenthesis
-        let code = ""
-        let seenParenthesis = false;
-        let firstParenthesis = -1;
-        let parenCount = 0
-        for (let i = 0; i < input.length; i++) {
-            let c = input[i];
-            switch (c) {
-                case '(':
-                    if (!seenParenthesis) {
-                        firstParenthesis = i
-                    }
-                    seenParenthesis = true;
-                    parenCount++;
-                    break;
-                case ')':
-                    if (!seenParenthesis) {
-                        //incorrect parenthesis
-                        return ""
-                    }
-                    parenCount--
-                    if (parenCount == 0) {
-                        code += `${parseToLatex(input.slice(firstParenthesis + 1, i + 1))}`
-                    }
-            }
-        }
-    }
-
     useEffect(() => {
         if (rawInput == "") {
             setResult(null);
+            setLatex("");
             return;
         }
 
         try {
-            const tokenList = convertToRPN(rawInput)
-            setResult(evaluateRPN(tokenList))
+            const tokenList = convertToRPN(rawInput);
+            setResult(evaluateRPN(tokenList));
+            setLatex(postfixToLatex(tokenList));
         } catch(e) {
             console.log(e)
             setResult(null);
+            setLatex("");
         }
     }, [rawInput])
 
@@ -98,6 +72,9 @@ const Evaluator = () => {
             value={rawInput} 
             placeholder='Type Here...'
             onChange={handleInput} />
+        {latex && <div className="text-3xl">
+            <InlineMath math={latex}/>
+        </div>}
         <div className="text-3xl">{result}</div>
     </div>
   )

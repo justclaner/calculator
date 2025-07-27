@@ -50,7 +50,8 @@ export const isFunction = (str) => {
 }
 
 const constants = new Set([
-    "π", "e"
+    "π", "e",
+    "\\pi",
 ])
 
 export const isConstant = (char) => {
@@ -402,4 +403,183 @@ export const evaluateRPN = (tokens) => {
     }
     console.log(output[0])
     return output[0];
+}
+
+export const parenRequired = (token, operator) => {
+    console.log("is paren required for", token, operator);
+    if (typeof token == "number" || isConstant(token)) {
+        return false;
+    } else if (typeof token == "string") {
+        if (token.length > 2 && token[0] == '(' && token[token.length - 1] == ')') {
+            return true;
+        }
+        if (operator == '!' || operator == '^') {
+            return true;
+        } else if (operator == '*') {
+            //only add extra parenthesis if there is addition/subtraction at the outermost level
+            let parenCount = 0;
+            for (let i = 0; i < token.length; i++) {
+                if (token[i] == '(') {
+                    parenCount++;
+                } else if (token[i] == ')') {
+                    parenCount--;
+                } else if (parenCount == 0 && (token[i] == '+' || token[i] == '-')) {
+                    return true;
+                }
+            }
+        } else {
+            //division, addition or subtraction never needs extra parenthesis
+            return true;
+        }
+    }
+    return false;
+}
+
+export const postfixToLatex = (tokens) => {
+    //quick check if it is singleton array with number element
+    if (tokens.length == 1) {
+        return tokens[0].toString();
+    }
+
+    let i = 0;
+    while (i < tokens.length) {
+        let token = tokens[i];
+        //OPERATOR
+        if (isOperator(token)) {
+            if (token == '!') {
+                if (i == 0) {
+                    throw new Error("Not enough tokens for factorial!");
+                }
+                let num = tokens[i - 1];
+                //factorial of an expression
+                if (parenRequired(num, "!")) {
+                    num = "\\left(" + num + "\\right)";
+                }
+                tokens.splice(i - 1, 2, `${num}!`);
+                i--;
+            } else {
+                if (i < 2) {
+                    throw new Error("Not enough tokens for operations!");
+                }
+                let newExpression = "";
+                switch (token) {
+                    case '^':
+                        let base = tokens[i - 2];
+                        let exponent = tokens[i - 1];
+
+                        if (parenRequired(base, "^")) {
+                            base = "\\left(" + base + "\\right)";
+                        }
+                        newExpression = `${base}^{${exponent}}`;
+                        //tokens.splice(i - 2, 3, `${base}^{${exponent}}`);
+                        break;
+                    case '*':
+                        console.log("MULTIPLICATION");
+                        let factor1 = tokens[i - 2];
+                        let factor2 = tokens[i - 1];
+                        let cdotRequired = true;
+                        if (parenRequired(factor1, "*")) {
+                            factor1 = "\\left(" + factor1 + "\\right)"
+                            cdotRequired = false;
+                        }
+                        if (parenRequired(factor2, "*")) {
+                            factor2 = "\\left(" + factor2 + "\\right)";
+                            cdotRequired = false;
+                        }
+                        //check if either factor1 or factor2 is constant/function
+                        if (isConstant(factor2) 
+                            || factor2.slice(0, 5) == '\\text' 
+                            || factor2.slice(0, 5) == '\\sqrt' 
+                            || factor2.slice(0, 7) == '\\lfloor'
+                            || factor2.slice(0, 6) == '\\lceil'
+                        ) {
+                            cdotRequired = false;
+                        }
+
+                        newExpression = `${factor1}${cdotRequired ? `\\cdot` : ``}${factor2}`;
+                        //tokens.splice(i - 2, 3, `${factor1}${cdotRequired ? `\\cdot` : ``}${factor2}`);
+                        break;
+                    case '/':
+                        let numerator = tokens[i - 2];
+                        let denominator = tokens[i - 1];
+                        newExpression = `\\frac{${numerator}}{${denominator}}`;
+                        //tokens.splice(i - 2, 3, `\\frac{${numerator}}{${denominator}}`);
+                        break;
+                    case '+':
+                        let addend1 = tokens[i - 2];
+                        let addend2 = tokens[i - 1];
+                        newExpression = `${addend1}+${addend2}`;
+                        //tokens.splice(i - 2, 3, `${addend1}+${addend2}`);
+                        break;
+                    case '-':
+                        let minuend = tokens[i - 2];
+                        let subtrahend = tokens[i - 1];
+                        newExpression = `${minuend}-${subtrahend}`;
+                        //tokens.splice(i - 2, 3, `${minuend}-${subtrahend}`);
+                        break;
+                    default:
+                        throw new Error("Detected operation, but no such operation exists???");
+                }
+                //i is initially at operation
+                //[token1, token2, operation, ...] --> [token, (something new), (where operation used to exist), ...]
+                //index must be shifted back by 2 before being increased
+                tokens.splice(i - 2, 3, newExpression);
+                i-= 2;
+            }
+        } else if (isFunction(token)) {
+            if (i == 0) {
+                throw new Error("Not enough tokens for a function!")
+            }
+            //multi-argument functions
+            if (token == 'max' || token == 'min') {
+                if (i < 2) {
+                    throw new Error("Not enough tokens for the min/max function (2 required)!");
+                }
+                let arg1 = tokens[i - 2];
+                let arg2 = tokens[i - 1];
+                tokens.splice(i - 2, 3, `\\${token}\\left(${arg1},${arg2}\\right)`);
+                i-= 2;    //decrease index
+            } else {
+                //index not required to be decremented
+                //one argument functions
+                let arg = tokens[i - 1];
+                let newExpression = "";
+                switch (token) {
+                    //functions that have special formatting
+                    case 'sqrt':
+                        newExpression = `\\sqrt{${arg}}`;
+                        break;
+                    case 'cbrt':
+                        newExpression = `\\sqrt[3]{${arg}}`;
+                        break;
+                    case 'floor':
+                        newExpression = `\\lfloor${arg}\\rfloor`;
+                        break;
+                    case 'ceil':
+                        newExpression = `\\lceil${arg}\\rceil`;
+                        break;
+                    default:    //simple function formatting
+                        if (token.slice(0, 3) == 'arc') {
+                            newExpression = `\\text{${token.slice(3)}}^{-1}\\mathopen{}\\left(${arg}\\right)`;
+                        } else {
+                            newExpression = `\\text{${token}}\\mathopen{}\\left(${arg}\\right)`;
+                        }
+                }
+                tokens.splice(i - 1, 2, newExpression);
+                i--;
+            }
+
+        } else if (typeof token == "number" || isNumber(token)) {
+            if (Math.abs(Math.PI - token) < 0.0000001) {
+                tokens[i] = '\\pi';
+            } else if (Math.abs(Math.E - token) < 0.0000001) {
+                tokens[i] = 'e';
+            }
+        }
+        i++;
+    }
+    if (tokens.length != 1) {
+        throw new Error("Something went wrong while converting from postfix to infix");
+    }
+    return tokens[0];
 }
